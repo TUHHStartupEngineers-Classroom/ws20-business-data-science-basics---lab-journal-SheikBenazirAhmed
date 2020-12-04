@@ -20,35 +20,209 @@ knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
 
 This is an `.Rmd` file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a \# in front of your text, it will create a top level-header.
 
-# My first post
+# Data Science Fundamentals
+## Intro to the tidyverse
+### Challenges
 
-Last compiled: `r Sys.Date()`
+Challenge 1: Analyze the sales by location (state) with a bar plot. Since state and city are multiple features (variables), they should be split. Which state has the highes revenue? Replace your bike_orderlines_wrangled_tbl object with the newly wrangled object (with the columns state and city).
 
-Notice that whatever you define as a top level header, automatically gets put into the table of contents bar on the left. 
+Challenge 2: Analyze the sales by location and year (facet_wrap). Because there are 12 states with bike stores, you should get 12 plots.
 
-## Second level header
+### Challenges Solution
 
-You can add more headers by adding more hashtags. These won't be put into the table of contents
-
-### third level header
-
-Here's an even lower level header
-
-# My second post (note the order)
-
-Last compiled: `r Sys.Date()`
-
-I'm writing this tutorial going from the top down. And, this is how it will be printed. So, notice the second post is second in the list. If you want your most recent post to be at the top, then make a new post starting at the top. If you want the oldest first, do, then keep adding to the bottom
-
-# Adding R stuff
-
-So far this is just a blog where you can write in plain text and serve your writing to a webpage. One of the main purposes of this lab journal is to record your progress learning R. The reason I am asking you to use this process is because you can both make a website, and a lab journal, and learn R all in R-studio. This makes everything really convenient and in the same place. 
-
-So, let's say you are learning how to make a histogram in R. For example, maybe you want to sample 100 numbers from a normal distribution with mean = 0, and standard deviation = 1, and then you want to plot a histogram. You can do this right here by using an r code block, like this:
-
-```{r}
-samples <- rnorm(100, mean=0, sd=1)
-hist(samples)
+```{r, code=readLines("1_Sales_Analysis_Challenge.R")}
 ```
 
-When you knit this R Markdown document, you will see that the histogram is printed to the page, along with the R code. This document can be set up to hide the R code in the webpage, just delete the comment (hashtag) from the cold folding option in the yaml header up top. For purposes of letting yourself see the code, and me see the code, best to keep it the way that it is. You'll learn that all of these things and more can be customized in each R code block.
+
+
+
+## Data Acquisition
+### Challenge 1
+
+Challenge 1: Get some data via an API. There are millions of providers, that offer API access for free and have good documentation about how to query their service. You just have to google them. You can use whatever service you want. For example, you can get data about your listening history (spotify), get data about flights (skyscanner) or just check the weather forecast.
+
+### Challenge 1 Solution
+
+```{r, code=readLines("2.1_Data_Acquisition_Challenge_1.R")}
+```
+
+### Challenge 2
+
+Challenge 2: Scrape one of the competitor websites of canyon (either https://www.rosebikes.de/ or https://www.radon-bikes.de) and create a small database. The database should contain the model names and prices for at least one category. Use the selectorgadget to get a good understanding of the website structure.
+
+### Challenge 2 Solution
+
+```{r, code=readLines("2.2_Data_Acquisition_Challenge_2.R")}
+```
+
+
+
+## Data Wrangling
+### Challenge
+
+Challenge:     
+            1. Patent Dominance: What US company / corporation has the most patents? List the 10 US companies with the most assigned/granted patents. 
+            2. Recent patent activity: What US company had the most patents granted in 2019? List the top 10 companies with the most new granted patents for 2019. 
+            3. Innovation in Tech: What is the most innovative tech sector? For the top 10 companies (worldwide) with the most patents, what are the top 5 USPTO tech                   main classes? 
+
+### Challenge Solution
+Adding the libraries
+
+    library(tidyverse)
+    library(vroom)
+    library(magrittr)
+    library(lubridate)
+    library(data.table)
+
+
+
+Importing the datas from .tsv files
+
+patent <-  "C:/Benazir/Study/WinterSemester_2021/BusinessDataScienceBasics/data-science/DS_101/02_data_wrangling/patent.tsv"
+patent_tbl <- fread(patent)
+setnames(patent_tbl, "id", "patent_id")
+
+assignee  <-   "C:/Benazir/Study/WinterSemester_2021/BusinessDataScienceBasics/data-science/DS_101/02_data_wrangling/assignee.tsv"
+assignee_tbl <- fread(assignee)
+setnames(assignee_tbl, "id", "assignee_id")
+
+patent_assignee <- "C:/Benazir/Study/WinterSemester_2021/BusinessDataScienceBasics/data-science/DS_101/02_data_wrangling/patent_assignee.tsv"
+patent_assignee_tbl<- fread(patent_assignee)
+
+uspc <- "C:/Benazir/Study/WinterSemester_2021/BusinessDataScienceBasics/data-science/DS_101/02_data_wrangling/uspc.tsv"
+uspc_tbl<- fread(uspc)
+
+
+
+Part 1. Patent Dominance:
+
+assignee_patentAssignee_merged <- merge(assignee_tbl, patent_assignee_tbl, by='assignee_id')
+na.omit(assignee_patentAssignee_merged, cols="organization")
+
+Part 1.1. US company with most patents:
+
+    assignee_patentAssignee_merged [, .N, by = organization][order(-N)] %>% head(1)%>%na.omit()
+
+Output Part 1.1. 
+
+                                        organization      N                              
+      1: International Business Machines Corporation 139091  
+
+
+
+
+Part 1.2. 10 US companies with most assigned/granted patents
+
+    assignee_patentAssignee_merged [, .N, by = organization][order(-N)]%>%na.omit() %>% head(10)
+
+Output Part 1.2.
+
+
+                                       organization      N    
+     1: International Business Machines Corporation 139091  
+     2:               Samsung Electronics Co., Ltd.  93561  
+     3:                      Canon Kabushiki Kaisha  75909  
+     4:                                              73070  
+     5:                            Sony Corporation  54342  
+     6:                    Kabushiki Kaisha Toshiba  49442  
+     7:                    General Electric Company  47121  
+     8:                               Hitachi, Ltd.  45374  
+     9:                           Intel Corporation  42156  
+    10:                             Fujitsu Limited  37196  
+
+
+
+
+Par 2. Recent patent activity:
+
+    assignee_patentAssignee_patent_merged <- merge(assignee_patentAssignee_merged, patent_tbl, by='patent_id') 
+    assignee_patentAssignee_patent_merged_view <- assignee_patentAssignee_patent_merged[1:2]
+
+Part 2.1. US company with most patents granted in 2019:
+
+    assignee_patentAssignee_patent_merged [lubridate::year(date) == 2019, .N, by = organization][order(-N)]%>%na.omit() %>% head(1)
+
+Output Part 2.1.
+
+
+                                        organization    N  
+      1: International Business Machines Corporation 9265 
+
+
+
+Part 2.2. 10 companies with most new granted patents in 2019:
+
+    assignee_patentAssignee_patent_merged [lubridate::year(date) == 2019 & kind=="B1", .N, by = organization][order(-N)]%>%na.omit() %>% head(10)
+
+Output Part 2.2.
+
+
+                                          organization    N
+     1:                      Amazon Technologies, Inc. 1766  
+     2:                     EMC IP Holding Company LLC  719  
+     3:                                    Google Inc.  550  
+     4:    International Business Machines Corporation  515  
+     5:                      Capital One Services, LLC  386  
+     6:                                     Apple Inc.  299  
+     7:                                                 276  
+     8: STATE FARM MUTUAL AUTOMOBILE INSURANCE COMPANY  242  
+     9:                                 Facebook, Inc.  239  
+    10:            Pioneer Hi-Bred International, Inc.  233  
+
+
+
+
+Part 3. Innovation in Tech:
+
+    assignee_patentAssignee_uspc_merged <- merge(assignee_patentAssignee_merged, uspc_tbl, by='patent_id')
+    assignee_patentAssignee_uspc_merged_view <- assignee_patentAssignee_uspc_merged[1:2]
+
+Part 3.1. Most innovative tech sector:
+
+    patent_tbl[, .N, by = type][order(-N)] %>% head(1)
+
+Output Part 3.1.
+
+
+            type       N    
+      1: utility 6735315  
+
+
+
+Part 3.2. Top 5 USPTO main classes of their patents:
+
+    assignee_patentAssignee_uspc_merged[organization=="International Business Machines Corporation", .N, by = mainclass_id][order(-N)]%>% head(5)
+
+Output Part 3.2.
+
+
+         mainclass_id     N  
+      1:          257 21754  
+      2:          709 16834  
+      3:          438 16596  
+      4:          707 16147  
+      5:          711 12829  
+
+
+
+
+## Data Visualization
+### Challenge 1
+
+Challenge 1: Goal: Map the time course of the cumulative Covid-19 cases! Adding the cases for Europe is optional. You can choose your own color theme, but don’t use the default one. Don’t forget to scale the axis properly. The labels can be added with geom_label() or with geom_label_repel() (from the package ggrepel).
+
+### Challenge 1 Solution
+
+```{r, code=readLines("4.1_Data_Visualization_Challenge_1.R")}
+```
+
+### Challenge 2
+
+Challenge 2: Goal: Visualize the distribution of the mortality rate (deaths / population) with geom_map(). The necessary longitudinal and lateral data can be accessed with this function: world <- map_data("world"). This data has also to be put in the map argument of geom_map().You have to join the lat/long data and the covid data. Unfortunately, the countries are not named identically in each dataset. You can adjust the data with the code chunk given in the lecture website.
+
+### Challenge 2 Solution
+
+```{r, code=readLines("4.2_Data_Visualization_Challenge_2.R")}
+```
+
+
